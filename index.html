@@ -91,6 +91,30 @@
       gap: 16px;
       margin-bottom: 24px
     }
+    /* avatar + text in header */
+    .id {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    
+    .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      object-fit: cover;
+      background: #000; /* fallback if image has transparent edges */
+    }
+    
+    /* make avatar smaller on small screens */
+    @media (max-width: 560px) {
+      .avatar {
+        width: 56px;
+        height: 56px;
+      }
+    }
+
 
     h1 {
       font-size: 28px;
@@ -359,13 +383,16 @@
 <body>
   <div class="wrap">
     <header>
-      <div>
-        <h1>Throw</h1>
-        <div class="sub">C++ developer. Counter-Strike 2 enjoyer. Discord: ThrowTop</div>
+      <div class="id">
+        <img class="avatar" src="pfp.jpg" alt="ThrowTop profile picture">
+        <div class="id-text">
+          <h1>Throw</h1>
+          <div class="sub">C++ developer. Counter-Strike 2 enjoyer. Discord: ThrowTop</div>
+        </div>
       </div>
       <button id="theme-toggle" class="toggle" onclick="toggleTheme()" aria-label="Toggle theme">Dark mode</button>
-
     </header>
+
 
     <div class="card">
       <h2>Projects</h2>
@@ -445,5 +472,6 @@
   }
   </script>
 </body>
+
 
 </html>
