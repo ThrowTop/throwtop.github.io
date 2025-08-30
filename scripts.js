@@ -163,39 +163,3 @@
     }
   });
 })();
-
-// YouTube app deep-link on mobile, fallback to web if not installed
-(function(){
-  var ua = navigator.userAgent || "";
-  var isiOS = /iPhone|iPad|iPod/i.test(ua);
-  var isAndroid = /Android/i.test(ua);
-
-  var links = document.querySelectorAll('a[data-yt-app]');
-  links.forEach(function(a){
-    a.addEventListener('click', function(e){
-      if (!(isiOS || isAndroid)) return; // desktop: let normal link open
-      var ios = a.getAttribute('data-ios');
-      var andr = a.getAttribute('data-android');
-      var appUrl = isiOS ? ios : andr;
-      if (!appUrl) return;
-
-      e.preventDefault();
-
-      var fallback = function(){ window.location.href = a.href; };
-
-      // Try app
-      window.location.href = appUrl;
-
-      // iOS: if app missing, bounce back to web after a short delay
-      if (isiOS) {
-        var t = setTimeout(fallback, 700);
-        var onVis = function(){
-          if (document.visibilityState === 'hidden') { clearTimeout(t); }
-          document.removeEventListener('visibilitychange', onVis);
-        };
-        document.addEventListener('visibilitychange', onVis);
-      }
-      // Android "intent://" should handle its own fallback UI in Chrome.
-    }, {passive:false});
-  });
-})();
