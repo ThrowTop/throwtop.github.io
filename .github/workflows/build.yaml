@@ -9,8 +9,7 @@ on:
       - "src/**"
       - "tailwind.config.js"
       - "postcss.config.js"
-      - "package.json"
-      - "package-lock.json"
+      - ".github/workflows/build.yml"
   workflow_dispatch:
 
 permissions:
@@ -22,37 +21,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        # DO NOT disable credentials; we need them to push
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-
-      # If you do not have package-lock.json yet, npm ci will fail.
-      # This conditional installs properly either way.
-      - name: Install deps
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
 
       - name: Build Tailwind CSS
         run: |
           mkdir -p assets
-          npx tailwindcss -i src/input.css -o assets/tailwind.css -m
+          npx --yes tailwindcss@3.4.10 -i src/input.css -o assets/tailwind.css -m
 
-      # Debug: show files so we know the CSS was created
-      - name: List repo root
-        run: ls -la
-
-      - name: List assets
+      - name: List assets (debug)
         run: ls -la assets || true
 
-      # Commit built CSS
       - name: Commit built CSS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
