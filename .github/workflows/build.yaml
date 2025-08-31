@@ -1,4 +1,4 @@
-name: Build site assets (Tailwind + routes)
+name: Build Tailwind
 
 on:
   push:
@@ -7,14 +7,10 @@ on:
       - "**/*.html"
       - "**/*.js"
       - "src/**"
-      - "assets/**"
       - "tailwind.config.js"
       - "postcss.config.js"
       - "package.json"
       - "package-lock.json"
-      - "routes.json"
-      - "build_routes.ps1"
-      - "scripts/**"
   workflow_dispatch:
 
 permissions:
@@ -26,8 +22,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+        # DO NOT disable credentials; we need them to push
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -35,22 +30,30 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      # If you do not have package-lock.json yet, npm ci will fail.
+      # This conditional installs properly either way.
       - name: Install deps
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Build Tailwind CSS
-        run: npm run build:css
+        run: |
+          mkdir -p assets
+          npx tailwindcss -i src/input.css -o assets/tailwind.css -m
 
-      # Install PowerShell 7
-      - name: Setup PowerShell
-        uses: PowerShell/PowerShell@v1.1.5
-        with:
-          version: "7.4.x"
+      # Debug: show files so we know the CSS was created
+      - name: List repo root
+        run: ls -la
 
-      - name: Generate extensionless routes (optional)
-        run: pwsh -NoLogo -NoProfile -File ./build_routes.ps1
+      - name: List assets
+        run: ls -la assets || true
 
-      - name: Commit built files
+      # Commit built CSS
+      - name: Commit built CSS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -60,6 +63,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "build: assets and routes"
+            git commit -m "build: tailwind.css"
             git push
           fi
