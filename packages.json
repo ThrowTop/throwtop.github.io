@@ -1,0 +1,14 @@
+{
+  "name": "throwtop-site",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i src/input.css -o assets/tailwind.css -m",
+    "build:routes": "pwsh ./build_routes.ps1",
+    "build": "npm run build:css && npm run build:routes"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10"
+  }
+}
