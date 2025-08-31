@@ -81,13 +81,59 @@
       z-index: -10;
     }
 
-    .bg-grid {
-      background-image:
-        linear-gradient(to right, rgba(255, 255, 255, .03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, .03) 1px, transparent 1px);
-      background-size: 28px 28px, 28px 28px;
-      mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, .9), rgba(0, 0, 0, .25) 70%, rgba(0, 0, 0, 0) 100%);
+    /* Split the grid into two layers so we can animate X and Y independently */
+    .bg-grid-x,
+    .bg-grid-y {
+      position: absolute;
+      inset: 0;
+      mask-image: radial-gradient(ellipse at center,
+          rgba(0, 0, 0, .9),
+          rgba(0, 0, 0, .25) 70%,
+          rgba(0, 0, 0, 0) 100%);
+      will-change: background-position;
     }
+
+    /* vertical lines (move right) */
+    .bg-grid-x {
+      background-image: linear-gradient(to right, rgba(255, 255, 255, .03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      /* tile width must match animation distance for seamless loop */
+      background-position: 0 0;
+      animation: move-grid-x 4s linear infinite;
+    }
+
+    /* horizontal lines (move down) */
+    .bg-grid-y {
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, .03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-position: 0 0;
+      animation: move-grid-y 2s linear infinite;
+    }
+
+    @keyframes move-grid-x {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 32px 0;
+      }
+
+      /* shift exactly one cell width */
+    }
+
+    @keyframes move-grid-y {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 0 32px;
+      }
+
+      /* shift exactly one cell height */
+    }
+
 
     .bg-blob {
       filter: blur(72px);
@@ -98,6 +144,17 @@
       background: linear-gradient(135deg, rgba(255, 255, 255, .04), transparent 40%, transparent 60%, rgba(255, 255, 255, .03));
       filter: blur(6px);
       opacity: .7;
+    }
+
+
+    /* Gradient text (violet → blue) */
+    .text-gradient {
+      background-image: linear-gradient(90deg, #a78bfa 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      display: inline-block;
     }
 
     /* ========================
@@ -254,12 +311,20 @@
 
 <body class="min-h-screen font-sans antialiased bg-neutral-950 text-neutral-100 selection:bg-blue-400/20">
   <!-- Background -->
-  <div class="bg-layer">
-    <div class="absolute inset-0 bg-grid"></div>
+  <div class="bg-layer" aria-hidden="true">
+    <!-- Grid split into two layers so X and Y can scroll independently -->
+    <div class="absolute inset-0 bg-grid-x opacity-90"></div>
+    <div class="absolute inset-0 bg-grid-y opacity-90"></div>
+
+    <!-- Color blobs (unchanged) -->
     <div class="absolute -top-24 -left-20 w-[30rem] h-[30rem] rounded-full bg-fuchsia-600/20 bg-blob"></div>
     <div class="absolute -bottom-28 -right-16 w-[34rem] h-[34rem] rounded-full bg-blue-500/20 bg-blob"></div>
+
+    <!-- Shear highlight -->
     <div class="absolute inset-0 bg-shear pointer-events-none"></div>
   </div>
+
+
 
   <div class="max-w-6xl mx-auto px-4 pt-10 md:pt-16 pb-10">
     <div class="grid md:grid-cols-[280px_minmax(0,1fr)] gap-6">
@@ -271,7 +336,7 @@
             <img src="pfp.jpg" alt="ThrowTop profile picture" class="w-16 h-16 rounded-full border border-white/10 object-cover bg-black">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <h1 class="text-2xl font-bold leading-tight tracking-tight">Throw</h1>
+                <h1 class="text-2xl font-bold leading-tight tracking-tight text-gradient">Throw</h1>
                 <!-- Steam badge -->
                 <div class="steam-level friendPlayerLevel lvl_200 lvl_plus_50" aria-label="Steam level 250">
                   <span class="friendPlayerLevelNum">250</span>
@@ -357,11 +422,12 @@
         <div class="mt-6 glow-card rounded-2xl bg-white/5 backdrop-blur shadow-sm p-5">
           <h2 class="text-base font-semibold tracking-tight mb-3">CS2 Settings</h2>
           <ul class="space-y-1 text-sm">
-            <li><span class="text-neutral-400">DPI</span> <span class="font-code text-blue-300">800</span></li>
-            <li><span class="text-neutral-400">Sensitivity</span> <span class="font-code text-blue-300">1.10</span></li>
-            <li><span class="text-neutral-400">Resolution</span> <span class="font-code text-blue-300">1440x1080 @ 360Hz</span></li>
-            <li><span class="text-neutral-400">Aspect Ratio</span> <span class="font-code text-blue-300">4:3 Stretch</span></li>
+            <li><span class="text-neutral-400">DPI</span> <span class="font-code text-gradient">800</span></li>
+            <li><span class="text-neutral-400">Sensitivity</span> <span class="font-code text-gradient">1.10</span></li>
+            <li><span class="text-neutral-400">Resolution</span> <span class="font-code text-gradient">1440x1080 @ 360Hz</span></li>
+            <li><span class="text-neutral-400">Aspect Ratio</span> <span class="font-code text-gradient">4:3 Stretch</span></li>
           </ul>
+
         </div>
       </aside>
 
@@ -413,27 +479,29 @@
             <div class="rounded-xl bg-white/5 p-4">
               <h2 class="text-lg font-semibold tracking-tight mb-3">Setup</h2>
               <ul class="space-y-1 text-sm">
-                <li><span class="text-neutral-400">CPU</span> <span class="font-code text-blue-300">Ryzen 7 7800X3D</span></li>
-                <li><span class="text-neutral-400">GPU</span> <span class="font-code text-blue-300">RTX 4070 Super</span></li>
-                <li><span class="text-neutral-400">RAM</span> <span class="font-code text-blue-300">DDR5 6000 MT/s</span></li>
-                <li><span class="text-neutral-400">Storage</span> <span class="font-code text-blue-300">Samsung 990 Pro 2 TB NVMe</span></li>
-                <li><span class="text-neutral-400">Motherboard</span> <span class="font-code text-blue-300">B650E Aorus Elite X AX ICE</span></li>
-                <li><span class="text-neutral-400">OS</span> <span class="font-code text-blue-300">Windows 11 24H2</span></li>
-                <li><span class="text-neutral-400">Display</span> <span class="font-code text-blue-300">Zowie XL2566K 360Hz</span></li>
+                <li><span class="text-neutral-400">CPU</span> <span class="font-code text-gradient">Ryzen 7 7800X3D</span></li>
+                <li><span class="text-neutral-400">GPU</span> <span class="font-code text-gradient">RTX 4070 Super</span></li>
+                <li><span class="text-neutral-400">RAM</span> <span class="font-code text-gradient">DDR5 6000 MT/s</span></li>
+                <li><span class="text-neutral-400">Storage</span> <span class="font-code text-gradient">Samsung 990 Pro 2 TB NVMe</span></li>
+                <li><span class="text-neutral-400">Motherboard</span> <span class="font-code text-gradient">B650E Aorus Elite X AX ICE</span></li>
+                <li><span class="text-neutral-400">OS</span> <span class="font-code text-gradient">Windows 11 24H2</span></li>
+                <li><span class="text-neutral-400">Display</span> <span class="font-code text-gradient">Zowie XL2566K 360Hz</span></li>
               </ul>
+
             </div>
 
             <!-- Audio & Peripherals -->
             <div class="rounded-xl bg-white/5 p-4">
               <h2 class="text-lg font-semibold tracking-tight mb-3">Audio & Peripherals</h2>
               <ul class="space-y-1 text-sm">
-                <li><span class="text-neutral-400">Mic</span> <span class="font-code text-blue-300">RODE XDM-100</span></li>
-                <li><span class="text-neutral-400">Headset/IEM</span> <span class="font-code text-blue-300">HyperX Cloud II / KZ ZS10 Pro</span></li>
-                <li><span class="text-neutral-400">DAC</span> <span class="font-code text-blue-300">FiiO JA11</span></li>
-                <li><span class="text-neutral-400">Mouse</span> <span class="font-code text-blue-300">Finalmouse ULX Prophecy 8KHz</span></li>
-                <li><span class="text-neutral-400">Keyboard</span> <span class="font-code text-blue-300">IROK MG75 Pro 8KHz</span></li>
-                <li><span class="text-neutral-400">Tools</span> <span class="font-code text-blue-300">OBS, Equalizer APO, HyprWin</span></li>
+                <li><span class="text-neutral-400">Mic</span> <span class="font-code text-gradient">RODE XDM-100</span></li>
+                <li><span class="text-neutral-400">Headset/IEM</span> <span class="font-code text-gradient">HyperX Cloud II / KZ ZS10 Pro</span></li>
+                <li><span class="text-neutral-400">DAC</span> <span class="font-code text-gradient">FiiO JA11</span></li>
+                <li><span class="text-neutral-400">Mouse</span> <span class="font-code text-gradient">Finalmouse ULX Prophecy 8KHz</span></li>
+                <li><span class="text-neutral-400">Keyboard</span> <span class="font-code text-gradient">IROK MG75 Pro 8KHz</span></li>
+                <li><span class="text-neutral-400">Tools</span> <span class="font-code text-gradient">OBS, Equalizer APO, HyprWin</span></li>
               </ul>
+
             </div>
           </div>
         </section>

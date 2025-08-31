@@ -1,5 +1,6 @@
 // scripts.js
-// Dark-only site. Handles proximity glow, clipboard copy with icon toggle, and check icon pop.
+// Dark-only site. Handles proximity glow, clipboard copy with icon toggle, check icon pop,
+// and neon grid mouse hotspot.
 
 (function () {
   "use strict";
@@ -71,7 +72,6 @@
     function showCopy() {
       iconCheck.classList.remove("is-visible");
       iconCopy.classList.add("is-visible");
-      // ensure it is visible before popping
       requestAnimationFrame(function () { playCheckPop(iconCopy); });
     }
 
@@ -79,7 +79,6 @@
       copyToClipboard(copiedText).then(function () {
         showCheck();
         if (announceMsg) announce(announceMsg);
-
         if (revertTimer) clearTimeout(revertTimer);
         revertTimer = setTimeout(showCopy, 1200);
       }).catch(function () { /* noop */ });
@@ -91,7 +90,7 @@
     });
   }
 
-  // ===== Proximity Glow =====
+  // ===== Proximity Glow for cards =====
   function setupProximityGlow() {
     var cards = Array.prototype.slice.call(document.querySelectorAll(".glow-card"));
     if (!cards.length) return;
@@ -159,9 +158,11 @@
     }, { passive: true });
   }
 
+
   // ===== Init =====
   document.addEventListener("DOMContentLoaded", function () {
     setupProximityGlow();
+
 
     var discordBtn = document.getElementById("discord-copy-btn");
     if (discordBtn) {
