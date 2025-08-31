@@ -34,13 +34,16 @@
     setTimeout(function () { live.textContent = msg; }, 10);
   }
 
-  // Retrigger CSS animation on an element
+  // Retrigger CSS animation on an element (always resets after end)
   function playCheckPop(el) {
     if (!el) return;
     el.classList.remove("copy-check-pop");
-    // force reflow to restart the animation
-    void el.offsetWidth;
+    void el.offsetWidth; // force reflow to restart
     el.classList.add("copy-check-pop");
+    el.addEventListener("animationend", function handler() {
+      el.classList.remove("copy-check-pop");
+      el.removeEventListener("animationend", handler);
+    });
   }
 
   // Bind copy behavior to a container that has data-copy and two svg icons
@@ -48,19 +51,37 @@
     if (!container) return;
     var iconCopy = container.querySelector('[data-icon="copy"]');
     var iconCheck = container.querySelector('[data-icon="check"]');
+    if (!iconCopy || !iconCheck) return;
+
+    // Overlap both icons and fade between them (no display:none)
+    var iconWrap = iconCopy.parentElement;
+    iconWrap.classList.add("icon-swap");
+    iconCopy.classList.remove("hidden");
+    iconCheck.classList.remove("hidden");
+    iconCopy.classList.add("is-visible");
+    iconCheck.classList.remove("is-visible");
+
+    var revertTimer = null;
+
+    function showCheck() {
+      iconCopy.classList.remove("is-visible");
+      iconCheck.classList.add("is-visible");
+      playCheckPop(iconCheck);
+    }
+    function showCopy() {
+      iconCheck.classList.remove("is-visible");
+      iconCopy.classList.add("is-visible");
+      // ensure it is visible before popping
+      requestAnimationFrame(function () { playCheckPop(iconCopy); });
+    }
 
     function runCopy() {
       copyToClipboard(copiedText).then(function () {
-        if (iconCopy && iconCheck) {
-          iconCopy.classList.add("hidden");
-          iconCheck.classList.remove("hidden");
-          playCheckPop(iconCheck);
-          setTimeout(function () {
-            iconCheck.classList.add("hidden");
-            iconCopy.classList.remove("hidden");
-          }, 1200);
-        }
+        showCheck();
         if (announceMsg) announce(announceMsg);
+
+        if (revertTimer) clearTimeout(revertTimer);
+        revertTimer = setTimeout(showCopy, 1200);
       }).catch(function () { /* noop */ });
     }
 
@@ -92,11 +113,9 @@
           var el = cards[i], r = rects[i];
           if (!r) continue;
 
-          // clamp point to rect for gradient anchor
           var cx = Math.max(r.left, Math.min(mx, r.right));
           var cy = Math.max(r.top, Math.min(my, r.bottom));
 
-          // distance outside rect (0 when inside)
           var dx = (mx < r.left) ? (r.left - mx) : (mx > r.right ? mx - r.right : 0);
           var dy = (my < r.top) ? (r.top - my) : (my > r.bottom ? my - r.bottom : 0);
           var dist = Math.hypot(dx, dy);
@@ -105,12 +124,10 @@
           var threshold = isNaN(thresholdAttr) ? 220 : thresholdAttr;
           var inside = (dx === 0 && dy === 0);
 
-          // intensity falloff
           var t = inside ? 1 : Math.max(0, 1 - (dist / threshold));
           var opacity = t > 0 ? (inside ? 0.9 : t * 0.75) : 0;
           var alpha = t > 0 ? (inside ? 0.50 : t * 0.40) : 0;
 
-          // convert to element-local percentages
           var px = ((cx - r.left) / r.width) * 100;
           var py = ((cy - r.top) / r.height) * 100;
 
@@ -130,7 +147,6 @@
       refreshRects();
     }, { passive: true });
 
-    // refresh after scrolling with rAF throttle
     var scrollTick = false;
     window.addEventListener("scroll", function () {
       if (!scrollTick) {
@@ -145,17 +161,14 @@
 
   // ===== Init =====
   document.addEventListener("DOMContentLoaded", function () {
-    // Proximity glow
     setupProximityGlow();
 
-    // Discord copy
     var discordBtn = document.getElementById("discord-copy-btn");
     if (discordBtn) {
       var discordTag = discordBtn.getAttribute("data-copy") || "ThrowTop";
       bindCopy(discordBtn, discordTag, "Discord copied.");
     }
 
-    // Backup command copy
     var backupCard = document.getElementById("backup-copy-card");
     if (backupCard) {
       var cmd = backupCard.getAttribute("data-copy") || "irm backup.throwtop.dev | iex";

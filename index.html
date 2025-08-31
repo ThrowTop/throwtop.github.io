@@ -23,29 +23,10 @@
 
   <meta name="color-scheme" content="dark">
 
-  <!-- JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-
-
-
   <link rel="icon" type="image/png" sizes="64x64" href="/pfp-64.png">
   <link rel="shortcut icon" type="image/png" href="pfp-64.png">
   <link rel="apple-touch-icon" href="pfp-64.png">
 
-  <!-- Tailwind CDN (extend font family first) -->
-  <script>
-    tailwind = {
-      theme: {
-        extend: {
-          fontFamily: {
-            code: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', '"Liberation Mono"', 'monospace']
-          }
-        }
-      }
-    };
-  </script>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- Custom CSS for glow, bg, and Steam badge -->
@@ -237,6 +218,32 @@
     .copy-check-pop {
       animation: pop .25s ease-out;
     }
+
+    .icon-swap {
+      position: relative;
+      display: inline-block;
+      width: 1rem;
+      /* matches h-4 w-4 */
+      height: 1rem;
+    }
+
+    .icon-swap>svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      transform: scale(1);
+      /* do not transition transform; leave to pop keyframe */
+      pointer-events: none;
+      will-change: opacity;
+    }
+
+    .icon-swap>svg.is-visible {
+      opacity: 1 !important;
+      /* override Tailwind opacity-80 on the copy icon */
+    }
   </style>
 
 
@@ -255,7 +262,8 @@
   </div>
 
   <div class="max-w-6xl mx-auto px-4 pt-10 md:pt-16 pb-10">
-    <div class="grid md:grid-cols-[280px,1fr] gap-6">
+    <div class="grid md:grid-cols-[280px_minmax(0,1fr)] gap-6">
+
       <!-- Sidebar -->
       <aside class="md:sticky md:top-8 self-start">
         <div class="glow-card rounded-2xl bg-white/5 backdrop-blur shadow-sm p-5">
@@ -436,7 +444,7 @@
 
   <!-- Footer in normal flow (no overlap) -->
   <footer class="text-center text-sm text-neutral-400 px-4 py-8">
-    Built with <span class="font-semibold">TailwindCSS</span>. No tracking. Hosted on
+    Built with <span class="font-semibold">TailwindCSS</span>. Hosted on
     <a href="https://pages.github.com" target="_blank" rel="noopener" class="text-blue-400 hover:underline">
       GitHub Pages
     </a>.
