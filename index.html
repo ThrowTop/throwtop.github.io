@@ -301,6 +301,10 @@
       opacity: 1 !important;
       /* override Tailwind opacity-80 on the copy icon */
     }
+
+    a.no-shine::after {
+      display: none !important;
+    }
   </style>
 
 
@@ -333,11 +337,13 @@
       <aside class="md:sticky md:top-8 self-start">
         <div class="glow-card rounded-2xl bg-white/5 backdrop-blur shadow-sm p-5">
           <div class="flex items-center gap-4">
-            <img src="pfp.jpg" alt="ThrowTop profile picture" class="w-16 h-16 rounded-full border border-white/10 object-cover bg-black">
+            <a href="pfp.jpg" target="_blank" rel="noopener" class="glow-card rounded-full p-[2px] block no-shine">
+              <img src="pfp.jpg" alt="ThrowTop profile picture" class="w-16 h-16 rounded-full border border-white/10 object-cover bg-black block">
+            </a>
+
             <div class="min-w-0">
               <div class="flex items-center gap-2">
                 <h1 class="text-2xl font-bold leading-tight tracking-tight text-gradient">Throw</h1>
-                <!-- Steam badge -->
                 <div class="steam-level friendPlayerLevel lvl_200 lvl_plus_50" aria-label="Steam level 250">
                   <span class="friendPlayerLevelNum">250</span>
                 </div>
@@ -346,6 +352,8 @@
               <p class="text-sm text-neutral-400">CS2 enjoyer.</p>
             </div>
           </div>
+
+
 
           <!-- Buttons stack -->
           <div class="mt-4 space-y-2">
