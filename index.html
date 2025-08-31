@@ -48,19 +48,31 @@
       inset: 0;
       border-radius: inherit;
       padding: 1px;
-      background:
-        radial-gradient(240px 240px at var(--glow-x, 50%) var(--glow-y, 50%),
+
+      background: radial-gradient(256px 256px at var(--glow-x, 50%) var(--glow-y, 50%),
           rgba(59, 130, 246, var(--glow-a, 0)) 0%,
           rgba(168, 85, 247, calc(var(--glow-a, 0)*0.9)) 45%,
           transparent 78%);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+
+      /* Safari/WebKit */
+      -webkit-mask: linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask: linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
+
+      /* Standard syntax (Firefox, Chrome) */
+      mask-image: linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
       mask-composite: exclude;
+      mask-repeat: no-repeat;
+
       pointer-events: none;
       opacity: var(--glow-o, 0);
       transition: opacity .12s linear;
       z-index: 2;
     }
+
 
     .glow-card::after {
       content: "";
@@ -71,6 +83,8 @@
       border: 1px solid var(--stroke);
       z-index: 1;
     }
+
+
 
     /* ========================
      Background layers (no motion)
@@ -244,6 +258,9 @@
     :where(#discord-copy-btn, #backup-copy-card, .glow-card a):hover::after {
       animation: shine .9s linear forwards;
     }
+
+
+
 
     @keyframes shine {
       to {
