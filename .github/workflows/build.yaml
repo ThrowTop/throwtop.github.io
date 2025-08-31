@@ -14,6 +14,7 @@ on:
       - "package-lock.json"
       - "routes.json"
       - "build_routes.ps1"
+      - "scripts/**"
   workflow_dispatch:
 
 permissions:
@@ -40,13 +41,14 @@ jobs:
       - name: Build Tailwind CSS
         run: npm run build:css
 
+      # Install PowerShell 7
       - name: Setup PowerShell
-        uses: PowerShell/PowerShell@v1
+        uses: PowerShell/PowerShell@v1.1.5
         with:
-          version: '7.4.x'
+          version: "7.4.x"
 
       - name: Generate extensionless routes (optional)
-        run: npm run build:routes
+        run: pwsh -NoLogo -NoProfile -File ./build_routes.ps1
 
       - name: Commit built files
         env:
