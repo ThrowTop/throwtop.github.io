@@ -325,6 +325,39 @@ CS2 enjoyer">
     a.no-shine::after {
       display: none !important;
     }
+
+    /* Swedish flag (8:5) built with layered gradients, no external image */
+    .flag-se {
+      width: 30px;
+      /* tweak to taste: 18..28px works well */
+      aspect-ratio: 8 / 5;
+      /* correct flag ratio */
+      background-color: #005293;
+      /* Swedish blue */
+      background-image:
+        linear-gradient(to bottom,
+          transparent 0, transparent 40%, #fecb00 40%, #fecb00 60%, transparent 60%, transparent 100%),
+        linear-gradient(to right,
+          transparent 0, transparent 31.25%, #fecb00 31.25%, #fecb00 43.75%, transparent 43.75%, transparent 100%);
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .flag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 11px;
+      line-height: 1;
+      color: #d4d4d8;
+      /* neutral-300 */
+    }
   </style>
 
 
@@ -364,10 +397,12 @@ CS2 enjoyer">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
                 <h1 class="text-2xl font-bold leading-tight tracking-tight text-gradient">Throw</h1>
+                <span class="flag-se" aria-label="Sweden" title="Sweden"></span>
                 <div class="steam-level friendPlayerLevel lvl_200 lvl_plus_50" aria-label="Steam level 250">
                   <span class="friendPlayerLevelNum">250</span>
                 </div>
               </div>
+
               <p class="text-sm text-neutral-400">C++ developer. </p>
               <p class="text-sm text-neutral-400">CS2 enjoyer.</p>
             </div>
@@ -478,7 +513,7 @@ CS2 enjoyer">
                 <span class="block text-sm text-neutral-400">Simple and efficient Youtube uploader.</span>
               </a>
             </li>
-            <li class="sm:col-span-2">
+            <li>
               <div id="backup-copy-card" role="button" tabindex="0" data-copy="irm backup.throwtop.dev | iex" class="glow-card cursor-pointer select-none rounded-xl p-3 bg-white/5 backdrop-blur hover:-translate-y-0.5 hover:shadow-md transition" data-glow-threshold="200">
                 <div class="inline-flex items-center gap-2">
                   <span class="font-semibold">Backup Scripts</span>
@@ -494,6 +529,12 @@ CS2 enjoyer">
                 </div>
                 <pre class="block text-sm text-blue-400 mt-1 font-code">irm backup.throwtop.dev | iex</pre>
               </div>
+            </li>
+            <li>
+              <a href="https://github.com/ThrowTop/finalmouse" target="_blank" rel="noopener" class="glow-card block rounded-xl p-3 bg-white/5 backdrop-blur hover:-translate-y-0.5 hover:shadow-md transition" data-glow-threshold="200">
+                <span class="font-semibold">Finalmouse CLI</span>
+                <span class="block text-sm text-neutral-400">Simple finalmouse polling rate changer CLI</span>
+              </a>
             </li>
           </ul>
         </section>
