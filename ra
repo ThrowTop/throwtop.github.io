@@ -1,0 +1,202 @@
+# rawaccel_detect.ps1
+# Single-file detector. Runs multiple user-mode checks and attempts IOCTL probes.
+# Edit IOCTL values if you know the exact codes.
+# Run elevated for best coverage. ASCII only.
+
+$ErrorActionPreference = 'Stop'
+
+
+# ---------------- config ----------------
+$DeviceNames = @("\\.\Rawaccel", "\\.\rawaccel")
+$IOCTL_GET_VERSION = [uint32]0x88882228u
+$IOCTL_READ = [uint32]0x88882220u
+
+
+$TRY_IOCTL = $true
+
+function Is-Admin {
+    $wi = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $wp = New-Object Security.Principal.WindowsPrincipal($wi)
+    return $wp.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Get-FileInfoAndSignature {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $null }
+    $sig = Get-AuthenticodeSignature -LiteralPath $Path
+    $hash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+    [pscustomobject]@{
+        Path        = $Path
+        Exists      = $true
+        SHA256      = $hash
+        SigStatus   = $sig.Status.ToString()
+        Signer      = ($sig.SignerCertificate?.Subject)
+        TimeStamper = ($sig.TimeStamperCertificate?.Subject)
+        IsOSBinary  = $sig.IsOSBinary
+    }
+}
+
+function Ensure-Native {
+
+    if (-not ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq 'RawAccelNative' })) {
+        $src = @"
+using System;
+using System.Runtime.InteropServices;
+public static class RawAccelNative {
+  public const UInt32 GENERIC_READ  = 2147483648; // 0x80000000
+  public const UInt32 GENERIC_WRITE = 1073741824; // 0x40000000
+  public const UInt32 FILE_SHARE_READ  = 1;
+  public const UInt32 FILE_SHARE_WRITE = 2;
+  public const UInt32 OPEN_EXISTING = 3;
+  public const UInt32 FILE_ATTRIBUTE_NORMAL = 128;
+
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+  public static extern IntPtr CreateFileW(
+    string lpFileName,
+    UInt32 dwDesiredAccess,
+    UInt32 dwShareMode,
+    IntPtr lpSecurityAttributes,
+    UInt32 dwCreationDisposition,
+    UInt32 dwFlagsAndAttributes,
+    IntPtr hTemplateFile);
+
+  [DllImport("kernel32.dll", SetLastError=true)]
+  public static extern bool CloseHandle(IntPtr hObject);
+
+  [DllImport("kernel32.dll", SetLastError=true)]
+  public static extern bool DeviceIoControl(
+    IntPtr hDevice,
+    UInt32 dwIoControlCode,
+    byte[] lpInBuffer,
+    UInt32 nInBufferSize,
+    byte[] lpOutBuffer,
+    UInt32 nOutBufferSize,
+    out UInt32 lpBytesReturned,
+    IntPtr lpOverlapped);
+}
+"@
+        Add-Type -TypeDefinition $src -Language CSharp | Out-Null
+
+    }
+}
+
+function Try-OpenDevice {
+    param([string]$Name)
+    Ensure-Native
+    $h = [RawAccelNative]::CreateFileW(
+        $Name,
+        [RawAccelNative]::GENERIC_READ -bor [RawAccelNative]::GENERIC_WRITE,
+        [RawAccelNative]::FILE_SHARE_READ -bor [RawAccelNative]::FILE_SHARE_WRITE,
+        [IntPtr]::Zero,
+        [RawAccelNative]::OPEN_EXISTING,
+        [RawAccelNative]::FILE_ATTRIBUTE_NORMAL,
+        [IntPtr]::Zero
+    )
+    $ok = ($h -ne [IntPtr]::Zero -and $h.ToInt64() -ne -1)
+    $le = if ($ok) { 0 } else { [Runtime.InteropServices.Marshal]::GetLastWin32Error() }
+    [pscustomobject]@{ Handle = $h; Opened = $ok; LastError = $le }
+}
+
+function Try-IOCTL {
+    param([IntPtr]$Handle, [uint32]$Code, [int]$OutLen, [byte[]]$InBuf = $null)
+    Ensure-Native
+    $outBuf = New-Object byte[] $OutLen
+    $bytes = [uint32]0
+    $inLen = if ($InBuf -ne $null) { [uint32]$InBuf.Length } else { [uint32]0 }
+    $ok = [RawAccelNative]::DeviceIoControl($Handle, $Code, $InBuf, $inLen, $outBuf, [uint32]$OutLen, [ref]$bytes, [IntPtr]::Zero)
+    [pscustomobject]@{
+        Code          = ('0x{0:X8}' -f $Code)
+        Ok            = $ok
+        BytesReturned = $bytes
+        OutHex        = if ($bytes -gt 0) { ($outBuf[0..([Math]::Min($bytes - 1, 63))] | ForEach-Object { $_.ToString('X2') }) -join ' ' } else { '' }
+    }
+}
+
+function Find-DriverService {
+    [pscustomobject]@{
+        Services      = Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'rawaccel' -or $_.DisplayName -match 'rawaccel' }
+        SystemDrivers = Get-CimInstance Win32_SystemDriver -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'rawaccel' -or $_.DisplayName -match 'rawaccel' -or $_.PathName -match 'rawaccel' }
+    }
+}
+
+function Find-RegistryFilters {
+    $keys = @(
+        'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}', # Mouse
+        'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{745A17A0-74D3-11D0-B6FE-00A0C90F57DA}'  # HID
+    )
+    $hits = @()
+    foreach ($k in $keys) {
+        try {
+            $p = Get-ItemProperty -Path $k -ErrorAction Stop
+            foreach ($v in 'UpperFilters', 'LowerFilters') {
+                if ($p.$v) {
+                    $arr = @($p.$v)
+                    if ($arr | Where-Object { $_ -match 'rawaccel' }) {
+                        $hits += [pscustomobject]@{ RegPath = $k; ValueName = $v; Filters = ($arr -join ',') }
+                    }
+                }
+            }
+        } catch {}
+    }
+    $hits
+}
+
+$score = 0
+$indicators = New-Object System.Collections.Generic.List[string]
+$files = @()
+$ctrls = @()
+$drivers = @()
+$regFilters = @()
+$ioctlOK = $false
+
+$driverPath = "$env:WINDIR\System32\drivers\rawaccel.sys"
+$fi = Get-FileInfoAndSignature -Path $driverPath
+if ($fi) {
+    $files += $fi
+    $score += 2
+    $indicators.Add("file_present")
+    if ($fi.SigStatus -eq 'Valid' -and $fi.Signer -match 'Hardware Compatibility Publisher') {
+        $score += 1
+        $indicators.Add("ms_signed_file")
+    }
+}
+
+$svc = Find-DriverService
+if ($svc.SystemDrivers) { $drivers += $svc.SystemDrivers; $score += 1; $indicators.Add("service_present") }
+
+$reg = Find-RegistryFilters
+if ($reg.Count -gt 0) { $regFilters = $reg; $score += 2; $indicators.Add("class_filter_registry") }
+
+foreach ($n in $DeviceNames) {
+    $hinfo = Try-OpenDevice -Name $n
+    $ctrls += [pscustomobject]@{ DevicePath = $n; Opened = $hinfo.Opened; LastError = $hinfo.LastError }
+    if ($hinfo.Opened) {
+        $score += 1
+        $indicators.Add("control_device_open")
+        if ($TRY_IOCTL) {
+            $v = Try-IOCTL -Handle $hinfo.Handle -Code $IOCTL_GET_VERSION -OutLen 32
+            $r = Try-IOCTL -Handle $hinfo.Handle -Code $IOCTL_READ -OutLen 4096
+            if ($v.Ok -or $r.Ok) { $ioctlOK = $true }
+        }
+        try { [RawAccelNative]::CloseHandle($hinfo.Handle) | Out-Null } catch {}
+    }
+}
+
+if ($ioctlOK) { $score += 5; $indicators.Add("ioctl_success") }
+
+[pscustomobject]@{
+    Admin           = (Is-Admin)
+    Score           = $score
+    Indicators      = ($indicators -join ',')
+    ControlDevice   = $ctrls
+    Files           = $files
+    SystemDrivers   = $drivers
+    RegistryFilters = $regFilters
+    Ioctl           = if ($TRY_IOCTL) {
+        @{
+            IOCTL_GET_VERSION = ('0x{0:X8}' -f $IOCTL_GET_VERSION)
+            IOCTL_READ        = ('0x{0:X8}' -f $IOCTL_READ)
+            Success           = $ioctlOK
+        }
+    } else { $null }
+} | Format-List *
