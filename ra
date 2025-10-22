@@ -199,4 +199,4 @@ if ($ioctlOK) { $score += 5; $indicators.Add("ioctl_success") }
             Success           = $ioctlOK
         }
     } else { $null }
-} | Format-List *
+} #| Format-List *
