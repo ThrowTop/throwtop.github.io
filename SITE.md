@@ -23,6 +23,7 @@ irm throwtop.dev/backup | iex
 ```
 
 Do not introduce alternate public backup URLs unless explicitly requested.
+Breaking changes are acceptable when they keep the project cleaner.
 
 ## Project Layout
 
@@ -32,8 +33,7 @@ Do not introduce alternate public backup URLs unless explicitly requested.
 - `src/styles.css` imports Tailwind v4 with `@import "tailwindcss"` and contains custom CSS.
 - `public/` contains static files copied directly into the built site, including `CNAME`, `.nojekyll`, and images.
 - `backup.ps1` is the readable source for the PowerShell backup script.
-- `backup` is the generated extensionless release file for `throwtop.dev/backup`.
-- `scripts/release-scripts.mjs` copies `backup.ps1` to `backup` and `dist/backup`.
+- `scripts/release-scripts.mjs` copies `backup.ps1` to `dist/backup`.
 - `vite.config.js` registers `@tailwindcss/vite`.
 - `.github/workflows/deploy.yml` builds the site and deploys `dist` with the official GitHub Pages actions.
 
@@ -58,8 +58,7 @@ The production build:
 1. Runs Vite.
 2. Compiles Tailwind v4 through the Vite plugin into minified hashed CSS.
 3. Minifies and hashes JavaScript.
-4. Copies `backup.ps1` to `backup`.
-5. Copies `backup.ps1` to `dist/backup`.
+4. Copies `backup.ps1` to `dist/backup`.
 
 GitHub Actions deploys on pushes to `main` using `.github/workflows/deploy.yml`.
 The workflow uses current official action majors for checkout, Node setup, Pages
@@ -71,8 +70,8 @@ use GitHub Actions as the source for this to publish `dist`.
 `backup.ps1` is the source of truth. It exists so the script opens naturally as a
 PowerShell file in editors.
 
-`backup` is the published compatibility path. It must remain extensionless
-because users run:
+`dist/backup` is the published extensionless path. It must remain extensionless
+because the public command is:
 
 ```powershell
 irm throwtop.dev/backup | iex
@@ -106,6 +105,8 @@ pwsh -NoProfile -Command "[scriptblock]::Create((Get-Content -Raw .\backup.ps1))
   feature requires it. This project uses Tailwind v4's Vite plugin path.
 - Avoid useless comments.
 - Use ASCII in code and docs unless the existing content requires otherwise.
+- Do not add legacy compatibility shims or root build-output workarounds.
+- Do not support old deployment modes. Fix the deployment mode instead.
 - Do not add new public script URLs unless requested.
 - Do not touch `ra` unless the task specifically asks for it.
 
@@ -127,12 +128,11 @@ Update the backup script:
 1. Edit `backup.ps1`.
 2. Run the PowerShell parse check.
 3. Run `npm run build`.
-4. Confirm `backup.ps1`, `backup`, and `dist/backup` match.
+4. Confirm `backup.ps1` and `dist/backup` match.
 
 ## Current Caveats
 
-- GitHub Pages was previously configured as legacy branch publishing from
-  `main` root. The workflow is present, but Pages must be set to GitHub Actions
-  in repository settings for `dist` deployment.
+- GitHub Pages must be set to GitHub Actions deployment. Do not add root
+  publishing compatibility files to support legacy Pages mode.
 - `ra` had an existing local modification before the Vite migration work. Treat
   it as unrelated unless explicitly asked.
