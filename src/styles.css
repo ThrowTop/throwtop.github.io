@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+:root {
+  --stroke: rgba(255, 255, 255, 0.12);
+}
+
+.glow-card {
+  position: relative;
+}
+
+.glow-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    256px 256px at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(59, 130, 246, var(--glow-a, 0)) 0%,
+    rgba(168, 85, 247, calc(var(--glow-a, 0) * 0.9)) 45%,
+    transparent 78%
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: var(--glow-o, 0);
+  transition: opacity 0.12s linear;
+}
+
+.glow-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 1px solid var(--stroke);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+}
+
+.bg-grid-x,
+.bg-grid-y {
+  position: absolute;
+  inset: 0;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.25) 70%, transparent 100%);
+  will-change: background-position;
+}
+
+.bg-grid-x {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-position: 0 0;
+  background-size: 32px 32px;
+  animation: move-grid-x 4s linear infinite;
+}
+
+.bg-grid-y {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-position: 0 0;
+  background-size: 32px 32px;
+  animation: move-grid-y 2s linear infinite;
+}
+
+@keyframes move-grid-x {
+  to {
+    background-position: 32px 0;
+  }
+}
+
+@keyframes move-grid-y {
+  to {
+    background-position: 0 32px;
+  }
+}
+
+.bg-blob {
+  filter: blur(72px);
+  opacity: 0.38;
+}
+
+.bg-shear {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 40%, transparent 60%, rgba(255, 255, 255, 0.03));
+  filter: blur(6px);
+  opacity: 0.7;
+}
+
+.text-gradient {
+  display: inline-block;
+  color: transparent;
+  background-image: linear-gradient(90deg, #a78bfa 0%, #60a5fa 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.steam-level {
+  position: relative;
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  background-image: url("https://community.fastly.steamstatic.com/public/shared/images/community/levels_shields.png");
+  background-position: 0 -160px;
+  background-repeat: no-repeat;
+  background-size: 32px 320px;
+}
+
+.friendPlayerLevelNum {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.6),
+    0 0 2px rgba(0, 0, 0, 0.6),
+    0 0 4px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  user-select: none;
+  pointer-events: none;
+}
+
+:where(aside .glow-card, main > section.glow-card) {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+:where(aside .glow-card, main > section.glow-card):hover {
+  box-shadow:
+    inset 0 0 0 1px var(--stroke),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+:where(.copy-btn, .project-link) {
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--stroke);
+  transform: translateY(0);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+:where(.copy-btn, .project-link):hover {
+  transform: translateY(-1px);
+}
+
+:where(.copy-btn, .project-link):active {
+  transform: translateY(0);
+}
+
+:where(.copy-btn, .project-link)::after {
+  content: "";
+  position: absolute;
+  inset: auto -40% auto -40%;
+  top: 0;
+  z-index: 3;
+  height: 140%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-90%) rotate(12deg);
+}
+
+:where(.copy-btn, .project-link):hover::after {
+  animation: shine 0.9s linear forwards;
+  opacity: 1;
+}
+
+@keyframes shine {
+  to {
+    transform: translateX(90%) rotate(12deg);
+  }
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.6);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.copy-check-pop {
+  animation: pop 0.25s ease-out;
+}
+
+.icon-swap {
+  position: relative;
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.icon-swap > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+
+.icon-swap > svg.is-visible {
+  opacity: 1;
+}
+
+.no-shine::after {
+  display: none;
+}
+
+.flag-se {
+  display: inline-block;
+  width: 30px;
+  aspect-ratio: 8 / 5;
+  background-color: #005293;
+  background-image:
+    linear-gradient(to bottom, transparent 0, transparent 40%, #fecb00 40%, #fecb00 60%, transparent 60%, transparent 100%),
+    linear-gradient(to right, transparent 0, transparent 31.25%, #fecb00 31.25%, #fecb00 43.75%, transparent 43.75%, transparent 100%);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  vertical-align: middle;
+}
